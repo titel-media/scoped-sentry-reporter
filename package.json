@@ -1,0 +1,38 @@
+{
+  "name": "@titelmedia/scoped-sentry-reporter",
+  "version": "1.0.0",
+  "description": "This package enables you to manage several sentry instances",
+  "homepage": "https://highsnobiety.com",
+  "repository": "git@github.com:titel-media/scoped-sentry-reporter.git",
+  "main": "src/index.js",
+  "license": "UNLICENSED",
+  "private": true,
+  "bugs": {
+    "url": "https://github.com/titel-media/scoped-sentry-reporter/issues",
+    "email": "dev@highsnobiety.com"
+  },
+  "scripts": {
+    "start": "env-cmd webpack --watch",
+    "lint": "eslint --config=.eslintrc.js --ext .js ./src",
+    "test": " jest --coverage ./src",
+    "test:watch": "yarn test --watchAll"
+  },
+  "dependencies": {
+    "@sentry/browser": "^5.4.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.5",
+    "@babel/plugin-proposal-export-default-from": "^7.2.0",
+    "@babel/preset-env": "^7.4.5",
+    "babel-eslint": "^10.0.1",
+    "babel-loader": "^8.0.6",
+    "core-js": "^3.1.4",
+    "env-cmd": "^9.0.3",
+    "eslint": "^5.16.0",
+    "eslint-plugin-jest": "^22.6.4",
+    "jest": "^24.8.0",
+    "webpack": "^4.34.0",
+    "webpack-cli": "^3.3.4"
+  }
+}

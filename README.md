@@ -1,1 +1,3 @@
-# scoped-sentry-reporter
+# Scoped Sentry Reporter
+
+Documentation will come…
