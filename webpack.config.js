@@ -8,10 +8,11 @@ module.exports = {
   devtool: 'cheap-module-eval-source-map',
   mode: 'development',
   entry: {
-    bundle: './src/_demo/index.js',
+    demo: './src/_demo/index.js',
+    bundle: './src/index.js',
   },
   output: {
-    path: path.resolve(__dirname, 'demo'), // eslint-disable-line no-undef
+    path: path.resolve(__dirname, 'dist'), // eslint-disable-line no-undef
     filename: '[name].js',
   },
   plugins: [

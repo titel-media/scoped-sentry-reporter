@@ -12,6 +12,7 @@
     "email": "dev@highsnobiety.com"
   },
   "scripts": {
+    "build": "env-cmd webpack",
     "start": "env-cmd webpack --watch",
     "lint": "eslint --config=.eslintrc.js --ext .js ./src",
     "test": " jest --coverage ./src",
