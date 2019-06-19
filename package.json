@@ -11,7 +11,7 @@
     "email": "dev@highsnobiety.com"
   },
   "scripts": {
-    "build": "env-cmd webpack",
+    "build": "env-cmd webpack && yarn babel ./src/reporterManager.js --out-file ./dist/index.es5.js",
     "start": "env-cmd webpack --watch",
     "lint": "eslint --config=.eslintrc.js --ext .js ./src",
     "test": " jest --coverage ./src",

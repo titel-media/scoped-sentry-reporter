@@ -14,18 +14,18 @@ class ReporterManager {
     const saveOnErrorHandler = window.onerror;
     const saveOnUnhandledRejection = window.onunhandledrejection;
 
-    window.onerror = (...all) => {
+    window.onerror = (a,b,c,d,e) => {
       if (typeof saveOnErrorHandler === 'function') {
-        saveOnErrorHandler(...all);
+        saveOnErrorHandler(a,b,c,d,e);
       }
-      this.reportError(...all);
+      this.reportError(a,b,c,d,e);
     };
 
-    window.onunhandledrejection = (...all) => {
+    window.onunhandledrejection = (a,b,c,d,e) => {
       if (typeof saveOnUnhandledRejection === 'function') {
-        saveOnUnhandledRejection(...all);
+        saveOnUnhandledRejection(a,b,c,d,e);
       }
-      this.reportError(...all);
+      this.reportError(a,b,c,d,e);
     };
   }
 
@@ -51,10 +51,13 @@ class ReporterManager {
       matchingReporter.forEach(({ client }) => {
         client.captureException(originalError);
       });
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn('Error with message only occurred, skipping reporting');
     }
   }
 
-  initSentry(dsn, conditions = [], additionalSentryOptions = {}) {
+  initSentry(dsn, conditions = [/.*/], additionalSentryOptions = {}) {
     if (!dsn) {
       throw new Error('You need to provide a DSN');
     }
@@ -75,6 +78,11 @@ class ReporterManager {
   }
 }
 
-const _instance = new ReporterManager();
+let _instance = null;
+
+if (typeof window !== 'undefined') {
+  _instance = !window.__SCOPED_SENTRY_REPORTER ? new ReporterManager() : window.__SCOPED_SENTRY_REPORTER;
+  window.__SCOPED_SENTRY_REPORTER = _instance;
+}
 
 export default _instance;
