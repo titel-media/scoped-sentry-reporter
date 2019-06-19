@@ -6,34 +6,22 @@ const DEFAULT_SENTRY_OPTIONS = {
 
 class ReporterManager {
   constructor() {
-    if (!ReporterManager._instance) {
-      this.initOnce();
-      ReporterManager._instance = this;
-    }
-    return ReporterManager._instance;
-  }
-
-  get globalContext() {
-    return typeof global === 'undefined' ? window : global;
-  }
-
-  initOnce() {
     this.reporter = [];
     this.bindGlobalErrorHandlers();
   }
 
   bindGlobalErrorHandlers() {
-    const saveOnErrorHandler = this.globalContext.onerror;
-    const saveOnUnhandledRejection = this.globalContext.onunhandledrejection;
+    const saveOnErrorHandler = window.onerror;
+    const saveOnUnhandledRejection = window.onunhandledrejection;
 
-    this.globalContext.onerror = (...all) => {
+    window.onerror = (...all) => {
       if (typeof saveOnErrorHandler === 'function') {
         saveOnErrorHandler(...all);
       }
       this.reportError(...all);
     };
 
-    this.globalContext.onunhandledrejection = (...all) => {
+    window.onunhandledrejection = (...all) => {
       if (typeof saveOnUnhandledRejection === 'function') {
         saveOnUnhandledRejection(...all);
       }
@@ -87,6 +75,6 @@ class ReporterManager {
   }
 }
 
-ReporterManager._instance = new ReporterManager();
+const _instance = new ReporterManager();
 
-export default ReporterManager;
+export default _instance;
