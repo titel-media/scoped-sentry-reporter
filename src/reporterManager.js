@@ -14,23 +14,19 @@ class ReporterManager {
     const saveOnErrorHandler = window.onerror;
     const saveOnUnhandledRejection = window.onunhandledrejection;
 
-    window.onerror = (a,b,c,d,e) => {
+    window.onerror = (...args) => {
       if (typeof saveOnErrorHandler === 'function') {
-        saveOnErrorHandler(a,b,c,d,e);
+        saveOnErrorHandler(...args);
       }
-      this.reportError(a,b,c,d,e);
+      this.reportError(...args);
     };
 
-    window.onunhandledrejection = (a,b,c,d,e) => {
+    window.onunhandledrejection = (...args) => {
       if (typeof saveOnUnhandledRejection === 'function') {
-        saveOnUnhandledRejection(a,b,c,d,e);
+        saveOnUnhandledRejection(...args);
       }
-      this.reportError(a,b,c,d,e);
+      this.reportError(...args);
     };
-  }
-
-  isConditionMatched(condition, { conditions }) {
-    return conditions.some();
   }
 
   addReporter(conditions, client) {
@@ -53,7 +49,7 @@ class ReporterManager {
       });
     } else {
       // eslint-disable-next-line no-console
-      console.warn('Error with message only occurred, skipping reporting');
+      console.warn('Error without url was thrown, skipping capture on Sentry.');
     }
   }
 

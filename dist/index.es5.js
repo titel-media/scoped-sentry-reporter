@@ -39,27 +39,21 @@ function () {
       var saveOnErrorHandler = window.onerror;
       var saveOnUnhandledRejection = window.onunhandledrejection;
 
-      window.onerror = function (a, b, c, d, e) {
+      window.onerror = function () {
         if (typeof saveOnErrorHandler === 'function') {
-          saveOnErrorHandler(a, b, c, d, e);
+          saveOnErrorHandler.apply(void 0, arguments);
         }
 
-        _this.reportError(a, b, c, d, e);
+        _this.reportError.apply(_this, arguments);
       };
 
-      window.onunhandledrejection = function (a, b, c, d, e) {
+      window.onunhandledrejection = function () {
         if (typeof saveOnUnhandledRejection === 'function') {
-          saveOnUnhandledRejection(a, b, c, d, e);
+          saveOnUnhandledRejection.apply(void 0, arguments);
         }
 
-        _this.reportError(a, b, c, d, e);
+        _this.reportError.apply(_this, arguments);
       };
-    }
-  }, {
-    key: "isConditionMatched",
-    value: function isConditionMatched(condition, _ref) {
-      var conditions = _ref.conditions;
-      return conditions.some();
     }
   }, {
     key: "addReporter",
@@ -79,8 +73,8 @@ function () {
   }, {
     key: "getMatchingReporter",
     value: function getMatchingReporter(url) {
-      return this.reporter.filter(function (_ref2) {
-        var conditions = _ref2.conditions;
+      return this.reporter.filter(function (_ref) {
+        var conditions = _ref.conditions;
         return conditions.some(function (condition) {
           return condition.test(url);
         });
@@ -91,13 +85,13 @@ function () {
     value: function reportError(msg, url, lineNumber, colNumber, originalError) {
       if (url) {
         var matchingReporter = this.getMatchingReporter(url);
-        matchingReporter.forEach(function (_ref3) {
-          var client = _ref3.client;
+        matchingReporter.forEach(function (_ref2) {
+          var client = _ref2.client;
           client.captureException(originalError);
         });
       } else {
         // eslint-disable-next-line no-console
-        console.warn('Error with message only occurred, skipping reporting');
+        console.warn('Error without url was thrown, skipping capture on Sentry.');
       }
     }
   }, {
