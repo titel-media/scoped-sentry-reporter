@@ -2,6 +2,7 @@ yarn-debug.log*
 yarn-error.log*
 coverage/
 node_modules/
+dist/
 .env
 .envrc
 .DS_Store
