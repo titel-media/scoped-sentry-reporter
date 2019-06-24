@@ -17,16 +17,25 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
+var URL_MATCHER = /https?:\/\/.*\/\w+\.\w{2,4}/gmi;
 var DEFAULT_SENTRY_OPTIONS = {
   integrations: _browser.defaultIntegrations
+};
+var DEFAULT_OPTIONS = {
+  debug: false
 };
 
 var ReporterManager =
 /*#__PURE__*/
 function () {
   function ReporterManager() {
+    var debug = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : DEFAULT_OPTIONS.debug;
+
     _classCallCheck(this, ReporterManager);
 
+    this.options = _objectSpread({}, DEFAULT_OPTIONS, {
+      debug: debug
+    });
     this.reporter = [];
     this.bindGlobalErrorHandlers();
   }
@@ -40,19 +49,41 @@ function () {
       var saveOnUnhandledRejection = window.onunhandledrejection;
 
       window.onerror = function () {
-        if (typeof saveOnErrorHandler === 'function') {
-          saveOnErrorHandler.apply(void 0, arguments);
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
         }
 
-        _this.reportError.apply(_this, arguments);
+        if (_this.debugMode) {
+          var _console;
+
+          // eslint-disable-next-line no-console
+          (_console = console).info.apply(_console, ['onerror'].concat(args));
+        }
+
+        if (typeof saveOnErrorHandler === 'function') {
+          saveOnErrorHandler.apply(void 0, args);
+        }
+
+        _this.reportError.apply(_this, args);
       };
 
       window.onunhandledrejection = function () {
-        if (typeof saveOnUnhandledRejection === 'function') {
-          saveOnUnhandledRejection.apply(void 0, arguments);
+        for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+          args[_key2] = arguments[_key2];
         }
 
-        _this.reportError.apply(_this, arguments);
+        if (_this.debugMode) {
+          var _console2;
+
+          // eslint-disable-next-line no-console
+          (_console2 = console).info.apply(_console2, ['onunhandledrejection'].concat(args));
+        }
+
+        if (typeof saveOnUnhandledRejection === 'function') {
+          saveOnUnhandledRejection.apply(void 0, args);
+        }
+
+        _this.reportError.apply(_this, args);
       };
     }
   }, {
@@ -81,18 +112,62 @@ function () {
       });
     }
   }, {
+    key: "reportToClients",
+    value: function reportToClients(clients, err) {
+      var _this2 = this;
+
+      clients.forEach(function (_ref2) {
+        var client = _ref2.client;
+
+        if (_this2.debugMode) {
+          // eslint-disable-next-line no-console
+          console.info('reporting to: ', client);
+        }
+
+        client.captureException(err);
+      });
+      return clients && clients.length > 0;
+    }
+  }, {
     key: "reportError",
     value: function reportError(msg, url, lineNumber, colNumber, originalError) {
+      var _this3 = this;
+
+      var reported = false;
+
       if (url) {
-        var matchingReporter = this.getMatchingReporter(url);
-        matchingReporter.forEach(function (_ref2) {
-          var client = _ref2.client;
-          client.captureException(originalError);
+        var matches = this.getMatchingReporter(url);
+        reported = this.reportToClients(matches, originalError);
+
+        if (this.debugMode) {
+          // eslint-disable-next-line no-console
+          console.info('reported: ', reported, matches);
+        }
+      }
+
+      if (!reported && originalError && originalError.stack) {
+        var stacktraceUrls = originalError.stack.match(URL_MATCHER);
+
+        if (this.debugMode) {
+          // eslint-disable-next-line no-console
+          console.info('stacktraceUrls: ', reported, stacktraceUrls);
+        }
+
+        stacktraceUrls.forEach(function (url) {
+          if (!reported) {
+            var _matches = _this3.getMatchingReporter(url);
+
+            reported = _this3.reportToClients(_matches, originalError);
+          }
         });
-      } else {
+      }
+
+      if (!reported) {
         // eslint-disable-next-line no-console
         console.warn('Error without url was thrown, skipping capture on Sentry.');
       }
+
+      return reported;
     }
   }, {
     key: "initSentry",
@@ -119,6 +194,15 @@ function () {
     key: "getReporters",
     value: function getReporters() {
       return this.reporter;
+    }
+  }, {
+    key: "debugMode",
+    set: function set() {
+      var on = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : DEFAULT_OPTIONS.debug;
+      this.options.debug = on;
+    },
+    get: function get() {
+      return this.options.debug;
     }
   }]);
 

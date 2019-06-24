@@ -1,13 +1,31 @@
 import { defaultIntegrations, BrowserClient } from '@sentry/browser';
 
+const URL_MATCHER = /https?:\/\/.*\/\w+\.\w{2,4}/gmi;
+
 const DEFAULT_SENTRY_OPTIONS = {
   integrations: defaultIntegrations
 };
 
+const DEFAULT_OPTIONS = {
+  debug: false,
+};
+
 class ReporterManager {
-  constructor() {
+  constructor(debug = DEFAULT_OPTIONS.debug,) {
+    this.options = {
+      ...DEFAULT_OPTIONS,
+      debug,
+    };
     this.reporter = [];
     this.bindGlobalErrorHandlers();
+  }
+
+  set debugMode(on = DEFAULT_OPTIONS.debug) {
+    this.options.debug = on;
+  }
+
+  get debugMode() {
+    return this.options.debug;
   }
 
   bindGlobalErrorHandlers() {
@@ -15,6 +33,10 @@ class ReporterManager {
     const saveOnUnhandledRejection = window.onunhandledrejection;
 
     window.onerror = (...args) => {
+      if (this.debugMode) {
+        // eslint-disable-next-line no-console
+        console.info('onerror', ...args);
+      }
       if (typeof saveOnErrorHandler === 'function') {
         saveOnErrorHandler(...args);
       }
@@ -22,6 +44,10 @@ class ReporterManager {
     };
 
     window.onunhandledrejection = (...args) => {
+      if (this.debugMode) {
+        // eslint-disable-next-line no-console
+        console.info('onunhandledrejection', ...args);
+      }
       if (typeof saveOnUnhandledRejection === 'function') {
         saveOnUnhandledRejection(...args);
       }
@@ -41,16 +67,46 @@ class ReporterManager {
     return this.reporter.filter(({ conditions }) => conditions.some(condition => condition.test(url)));
   }
 
+  reportToClients(clients, err) {
+    clients.forEach(({ client }) => {
+      if (this.debugMode) {
+        // eslint-disable-next-line no-console
+        console.info('reporting to: ', client);
+      }
+      client.captureException(err);
+    });
+    return clients && clients.length > 0;
+  }
+
   reportError(msg, url, lineNumber, colNumber, originalError) {
+    let reported = false;
     if (url) {
-      const matchingReporter = this.getMatchingReporter(url);
-      matchingReporter.forEach(({ client }) => {
-        client.captureException(originalError);
+      const matches = this.getMatchingReporter(url);
+      reported = this.reportToClients(matches, originalError);
+      if (this.debugMode) {
+        // eslint-disable-next-line no-console
+        console.info('reported: ', reported, matches);
+      }
+    }
+    if (!reported && originalError && originalError.stack) {
+      const stacktraceUrls = originalError.stack.match(URL_MATCHER);
+      if (this.debugMode) {
+        // eslint-disable-next-line no-console
+        console.info('stacktraceUrls: ', reported, stacktraceUrls);
+      }
+      stacktraceUrls.forEach(url => {
+        if (!reported) {
+          const matches = this.getMatchingReporter(url);
+          reported = this.reportToClients(matches, originalError);
+        }
       });
-    } else {
+    }
+
+    if (!reported) {
       // eslint-disable-next-line no-console
       console.warn('Error without url was thrown, skipping capture on Sentry.');
     }
+    return reported;
   }
 
   initSentry(dsn, conditions = [/.*/], additionalSentryOptions = {}) {
