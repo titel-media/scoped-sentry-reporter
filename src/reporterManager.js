@@ -89,7 +89,7 @@ class ReporterManager {
       }
     }
     if (!reported && originalError && originalError.stack) {
-      const stacktraceUrls = originalError.stack.match(URL_MATCHER);
+      const stacktraceUrls = originalError.stack.match(URL_MATCHER) || [];
       if (this.debugMode) {
         // eslint-disable-next-line no-console
         console.info('stacktraceUrls: ', reported, stacktraceUrls);
