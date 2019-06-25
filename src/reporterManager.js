@@ -26,7 +26,7 @@ class ReporterManager {
       debug,
     };
     this.reporter = [];
-
+    this.defaultReporter = null;
     this.reportError = this.reportError.bind(this);
 
     this.bindGlobalErrorHandlers();
@@ -49,6 +49,17 @@ class ReporterManager {
     this.reporter.push({ client, conditions });
   }
 
+  setDefaultReporter(dsn, options = {}) {
+    if (!dsn) {
+      throw new Error('You need to provide a DSN');
+    }
+
+    this.defaultReporter = new BrowserClient({
+      dsn,
+      options,
+    });
+  }
+
   removeReporter(client) {
     this.reporter = this.reporter.filter(reporter => reporter !== client);
   }
@@ -68,26 +79,15 @@ class ReporterManager {
     return clients && clients.length > 0;
   }
 
-  reportError(msg, url, lineNumber, colNumber, originalError) {
+  reportError(error = {}) {
     if (this.debugMode) {
       // eslint-disable-next-line no-console
-      console.info('will report error: ', msg, url, lineNumber, colNumber, originalError);
+      console.info('will report error: ', error);
     }
     let reported = false;
-    if (url) {
-      const matches = this.getMatchingReporter(url);
-      if (this.debugMode) {
-        // eslint-disable-next-line no-console
-        console.info('found matches: ', matches);
-      }
-      reported = this.reportToClients(matches, originalError);
-      if (this.debugMode) {
-        // eslint-disable-next-line no-console
-        console.info('reported: ', reported, matches);
-      }
-    }
-    if (!reported && originalError && originalError.stack) {
-      const stacktraceUrls = originalError.stack.match(URL_MATCHER) || [];
+    const { stack } = error;
+    if (stack) {
+      const stacktraceUrls = error.stack.match(URL_MATCHER) || [];
       if (this.debugMode) {
         // eslint-disable-next-line no-console
         console.info('stacktraceUrls: ', reported, stacktraceUrls);
@@ -95,15 +95,20 @@ class ReporterManager {
       stacktraceUrls.forEach(url => {
         if (!reported) {
           const matches = this.getMatchingReporter(url);
-          reported = this.reportToClients(matches, originalError);
+          reported = this.reportToClients(matches, error);
         }
       });
     }
 
+    if (this.defaultReporter) {
+      reported = this.reportToClients([this.defaultReporter], error);
+    }
+
     if (!reported) {
       // eslint-disable-next-line no-console
-      console.warn('Error without url was thrown, skipping capture on Sentry.');
+      console.warn('Error thrown, skipping capture on Sentry.', error);
     }
+
     return reported;
   }
 
