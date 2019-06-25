@@ -27,7 +27,6 @@ class ReporterManager {
     };
     this.reporter = [];
     this.defaultReporter = null;
-    this.reportError = this.reportError.bind(this);
 
     this.bindGlobalErrorHandlers();
   }
@@ -41,8 +40,8 @@ class ReporterManager {
   }
 
   bindGlobalErrorHandlers() {
-    window.addEventListener('error', this.reportError);
-    window.addEventListener('unhandledrejection', this.reportError);
+    window.addEventListener('error', ({ error }) => this.reportError(error));
+    window.addEventListener('unhandledrejection', ({ error }) => this.reportError(error));
   }
 
   addReporter(conditions, client) {
@@ -55,8 +54,9 @@ class ReporterManager {
     }
 
     this.defaultReporter = new BrowserClient({
+      ...DEFAULT_SENTRY_OPTIONS,
+      ...options,
       dsn,
-      options,
     });
   }
 
