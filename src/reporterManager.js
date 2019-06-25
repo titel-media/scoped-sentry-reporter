@@ -100,7 +100,7 @@ class ReporterManager {
       });
     }
 
-    if (this.defaultReporter) {
+    if (!reported && this.defaultReporter instanceof BrowserClient) {
       this.defaultReporter.captureException(error);
       reported = true;
     }
