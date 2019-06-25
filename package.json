@@ -17,8 +17,7 @@
     "test:watch": "yarn test --watchAll"
   },
   "dependencies": {
-    "@sentry/browser": "^5.4.0",
-    "nodemon": "^1.19.1"
+    "@sentry/browser": "^5.4.3"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
