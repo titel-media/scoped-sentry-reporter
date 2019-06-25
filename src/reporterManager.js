@@ -101,7 +101,8 @@ class ReporterManager {
     }
 
     if (this.defaultReporter) {
-      reported = this.reportToClients([this.defaultReporter], error);
+      this.defaultReporter.captureException(error);
+      reported = true;
     }
 
     if (!reported) {
