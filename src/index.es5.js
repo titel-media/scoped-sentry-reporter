@@ -5,7 +5,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = void 0;
 
+var _core = require("@sentry/core");
+
 var _browser = require("@sentry/browser");
+
+var _integrations = require("@sentry/browser/dist/integrations");
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
 
@@ -19,7 +23,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 var URL_MATCHER = /https?:\/\/.*\/\w+\.\w{2,4}/gmi;
 var DEFAULT_SENTRY_OPTIONS = {
-  integrations: _browser.defaultIntegrations
+  integrations: [new _core.Integrations.InboundFilters(), new _core.Integrations.FunctionToString(), new _integrations.TryCatch(), new _integrations.Breadcrumbs(), new _integrations.LinkedErrors(), new _integrations.UserAgent()]
 };
 var DEFAULT_OPTIONS = {
   debug: false
@@ -37,54 +41,15 @@ function () {
       debug: debug
     });
     this.reporter = [];
+    this.reportError = this.reportError.bind(this);
     this.bindGlobalErrorHandlers();
   }
 
   _createClass(ReporterManager, [{
     key: "bindGlobalErrorHandlers",
     value: function bindGlobalErrorHandlers() {
-      var _this = this;
-
-      var saveOnErrorHandler = window.onerror;
-      var saveOnUnhandledRejection = window.onunhandledrejection;
-
-      window.onerror = function () {
-        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-          args[_key] = arguments[_key];
-        }
-
-        if (_this.debugMode) {
-          var _console;
-
-          // eslint-disable-next-line no-console
-          (_console = console).info.apply(_console, ['onerror'].concat(args));
-        }
-
-        if (typeof saveOnErrorHandler === 'function') {
-          saveOnErrorHandler.apply(void 0, args);
-        }
-
-        _this.reportError.apply(_this, args);
-      };
-
-      window.onunhandledrejection = function () {
-        for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-          args[_key2] = arguments[_key2];
-        }
-
-        if (_this.debugMode) {
-          var _console2;
-
-          // eslint-disable-next-line no-console
-          (_console2 = console).info.apply(_console2, ['onunhandledrejection'].concat(args));
-        }
-
-        if (typeof saveOnUnhandledRejection === 'function') {
-          saveOnUnhandledRejection.apply(void 0, args);
-        }
-
-        _this.reportError.apply(_this, args);
-      };
+      window.addEventListener('error', this.reportError);
+      window.addEventListener('unhandledrejection', this.reportError);
     }
   }, {
     key: "addReporter",
@@ -114,12 +79,12 @@ function () {
   }, {
     key: "reportToClients",
     value: function reportToClients(clients, err) {
-      var _this2 = this;
+      var _this = this;
 
       clients.forEach(function (_ref2) {
         var client = _ref2.client;
 
-        if (_this2.debugMode) {
+        if (_this.debugMode) {
           // eslint-disable-next-line no-console
           console.info('reporting to: ', client);
         }
@@ -131,12 +96,23 @@ function () {
   }, {
     key: "reportError",
     value: function reportError(msg, url, lineNumber, colNumber, originalError) {
-      var _this3 = this;
+      var _this2 = this;
+
+      if (this.debugMode) {
+        // eslint-disable-next-line no-console
+        console.info('will report error: ', msg, url, lineNumber, colNumber, originalError);
+      }
 
       var reported = false;
 
       if (url) {
         var matches = this.getMatchingReporter(url);
+
+        if (this.debugMode) {
+          // eslint-disable-next-line no-console
+          console.info('found matches: ', matches);
+        }
+
         reported = this.reportToClients(matches, originalError);
 
         if (this.debugMode) {
@@ -146,7 +122,7 @@ function () {
       }
 
       if (!reported && originalError && originalError.stack) {
-        var stacktraceUrls = originalError.stack.match(URL_MATCHER);
+        var stacktraceUrls = originalError.stack.match(URL_MATCHER) || [];
 
         if (this.debugMode) {
           // eslint-disable-next-line no-console
@@ -155,9 +131,9 @@ function () {
 
         stacktraceUrls.forEach(function (url) {
           if (!reported) {
-            var _matches = _this3.getMatchingReporter(url);
+            var _matches = _this2.getMatchingReporter(url);
 
-            reported = _this3.reportToClients(_matches, originalError);
+            reported = _this2.reportToClients(_matches, originalError);
           }
         });
       }

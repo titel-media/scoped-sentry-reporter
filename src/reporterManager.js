@@ -1,9 +1,18 @@
-import { defaultIntegrations, BrowserClient } from '@sentry/browser';
+import { Integrations as CoreIntegrations } from '@sentry/core';
+import { BrowserClient } from '@sentry/browser';
+import { Breadcrumbs, LinkedErrors, TryCatch, UserAgent } from '@sentry/browser/dist/integrations';
 
 const URL_MATCHER = /https?:\/\/.*\/\w+\.\w{2,4}/gmi;
 
 const DEFAULT_SENTRY_OPTIONS = {
-  integrations: defaultIntegrations
+  integrations: [
+    new CoreIntegrations.InboundFilters(),
+    new CoreIntegrations.FunctionToString(),
+    new TryCatch(),
+    new Breadcrumbs(),
+    new LinkedErrors(),
+    new UserAgent(),
+  ],
 };
 
 const DEFAULT_OPTIONS = {
@@ -17,6 +26,9 @@ class ReporterManager {
       debug,
     };
     this.reporter = [];
+
+    this.reportError = this.reportError.bind(this);
+
     this.bindGlobalErrorHandlers();
   }
 
@@ -29,30 +41,8 @@ class ReporterManager {
   }
 
   bindGlobalErrorHandlers() {
-    const saveOnErrorHandler = window.onerror;
-    const saveOnUnhandledRejection = window.onunhandledrejection;
-
-    window.onerror = (...args) => {
-      if (this.debugMode) {
-        // eslint-disable-next-line no-console
-        console.info('onerror', ...args);
-      }
-      if (typeof saveOnErrorHandler === 'function') {
-        saveOnErrorHandler(...args);
-      }
-      this.reportError(...args);
-    };
-
-    window.onunhandledrejection = (...args) => {
-      if (this.debugMode) {
-        // eslint-disable-next-line no-console
-        console.info('onunhandledrejection', ...args);
-      }
-      if (typeof saveOnUnhandledRejection === 'function') {
-        saveOnUnhandledRejection(...args);
-      }
-      this.reportError(...args);
-    };
+    window.addEventListener('error', this.reportError);
+    window.addEventListener('unhandledrejection', this.reportError);
   }
 
   addReporter(conditions, client) {
@@ -79,9 +69,17 @@ class ReporterManager {
   }
 
   reportError(msg, url, lineNumber, colNumber, originalError) {
+    if (this.debugMode) {
+      // eslint-disable-next-line no-console
+      console.info('will report error: ', msg, url, lineNumber, colNumber, originalError);
+    }
     let reported = false;
     if (url) {
       const matches = this.getMatchingReporter(url);
+      if (this.debugMode) {
+        // eslint-disable-next-line no-console
+        console.info('found matches: ', matches);
+      }
       reported = this.reportToClients(matches, originalError);
       if (this.debugMode) {
         // eslint-disable-next-line no-console
