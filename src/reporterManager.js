@@ -55,8 +55,8 @@ class ReporterManager {
     this.reportError(event.error || {});
   }
 
-  addReporter(conditions, client) {
-    this.reporter.push({ client, conditions });
+  addReporter(conditions, hub) {
+    this.reporter.push({ hub, conditions });
   }
 
   setDefaultReporter(dsn, options = {}) {
@@ -73,23 +73,26 @@ class ReporterManager {
     this.defaultReporter = new Hub(client);
   }
 
-  removeReporter(client) {
-    this.reporter = this.reporter.filter(reporter => reporter !== client);
+  removeReporter(hub) {
+    this.reporter = this.reporter.filter(reporter => reporter !== hub);
   }
 
   getMatchingReporter(url) {
     return this.reporter.filter(({ conditions }) => conditions.some(condition => condition.test(url)));
   }
 
-  reportToClients(clients, err) {
-    clients.forEach(({ client }) => {
+  reportToClients(hubs, err) {
+    let reported = false;
+    hubs.forEach(({ hub }) => {
       if (this.debugMode) {
         // eslint-disable-next-line no-console
-        console.info('reporting to: ', client);
+        console.info('reporting to: ', hub);
       }
-      client.captureException(err);
+      hub.run(client => {
+        reported = Boolean(client.captureException(err));
+      });
     });
-    return clients && clients.length > 0;
+    return reported;
   }
 
   reportError(error) {
@@ -114,8 +117,9 @@ class ReporterManager {
     }
 
     if (!reported && this.defaultReporter instanceof BrowserClient) {
-      this.defaultReporter.captureException(error);
-      reported = true;
+      this.defaultReporter.run(client => {
+        reported = Boolean(client.captureException(error));
+      });
     }
 
     if (!reported) {

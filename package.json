@@ -11,7 +11,8 @@
     "email": "dev@highsnobiety.com"
   },
   "scripts": {
-    "build": "yarn babel ./src/reporterManager.js --out-file ./src/index.es5.js",
+    "build": "yarn build:es5 && yarn build:browser",
+    "build:es5": "yarn babel ./src/reporterManager.js --out-file ./src/index.es5.js",
     "build:browser": "webpack --progress",
     "lint": "eslint --config=.eslintrc.js --ext .js ./src",
     "test": " jest --coverage ./src",

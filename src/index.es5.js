@@ -66,9 +66,9 @@ function () {
     }
   }, {
     key: "addReporter",
-    value: function addReporter(conditions, client) {
+    value: function addReporter(conditions, hub) {
       this.reporter.push({
-        client: client,
+        hub: hub,
         conditions: conditions
       });
     }
@@ -88,9 +88,9 @@ function () {
     }
   }, {
     key: "removeReporter",
-    value: function removeReporter(client) {
+    value: function removeReporter(hub) {
       this.reporter = this.reporter.filter(function (reporter) {
-        return reporter !== client;
+        return reporter !== hub;
       });
     }
   }, {
@@ -105,20 +105,23 @@ function () {
     }
   }, {
     key: "reportToClients",
-    value: function reportToClients(clients, err) {
+    value: function reportToClients(hubs, err) {
       var _this = this;
 
-      clients.forEach(function (_ref2) {
-        var client = _ref2.client;
+      var reported = false;
+      hubs.forEach(function (_ref2) {
+        var hub = _ref2.hub;
 
         if (_this.debugMode) {
           // eslint-disable-next-line no-console
-          console.info('reporting to: ', client);
+          console.info('reporting to: ', hub);
         }
 
-        client.captureException(err);
+        hub.run(function (client) {
+          reported = Boolean(client.captureException(err));
+        });
       });
-      return clients && clients.length > 0;
+      return reported;
     }
   }, {
     key: "reportError",
@@ -151,8 +154,9 @@ function () {
       }
 
       if (!reported && this.defaultReporter instanceof _browser.BrowserClient) {
-        this.defaultReporter.captureException(error);
-        reported = true;
+        this.defaultReporter.run(function (client) {
+          reported = Boolean(client.captureException(error));
+        });
       }
 
       if (!reported) {

@@ -4,7 +4,7 @@ module.exports = {
   devtool: 'cheap-module-eval-source-map',
   mode: 'development',
   entry: {
-    bundle: './src/index.js',
+    bundle: './src/reporterManager.js',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
