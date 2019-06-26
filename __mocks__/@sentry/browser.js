@@ -1,3 +1,5 @@
+import { Integrations } from '@sentry/browser';
+
 class BrowserClient {
   constructor(options) {
     this.options = options;
@@ -10,4 +12,5 @@ class BrowserClient {
 
 module.exports = {
   BrowserClient,
+  Integrations,
 };

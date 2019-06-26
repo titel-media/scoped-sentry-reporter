@@ -4,22 +4,28 @@
   "description": "This package enables you to manage several sentry instances",
   "homepage": "https://highsnobiety.com",
   "repository": "git@github.com:titel-media/scoped-sentry-reporter.git",
-  "main": "src/index.js",
+  "main": "umd/index.js",
+  "module": "esm/index.js",
   "license": "UNLICENSED",
   "bugs": {
     "url": "https://github.com/titel-media/scoped-sentry-reporter/issues",
     "email": "dev@highsnobiety.com"
   },
+  "files": [
+    "esm/*",
+    "umd/*"
+  ],
   "scripts": {
-    "build": "yarn build:es5 && yarn build:browser",
-    "build:es5": "yarn babel ./src/reporterManager.js --out-file ./src/index.es5.js",
-    "build:browser": "webpack --progress",
+    "prepare": "yarn build",
+    "build": "rollup --config",
     "lint": "eslint --config=.eslintrc.js --ext .js ./src",
     "test": " jest --coverage ./src",
     "test:watch": "yarn test --watchAll"
   },
   "dependencies": {
-    "@sentry/browser": "^5.4.3"
+    "@sentry/browser": "^5.4.3",
+    "@sentry/core": "^5.4.3",
+    "@sentry/hub": "^5.4.3"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
@@ -27,12 +33,10 @@
     "@babel/plugin-proposal-export-default-from": "^7.2.0",
     "@babel/preset-env": "^7.4.5",
     "babel-eslint": "^10.0.1",
-    "babel-loader": "^8.0.6",
     "core-js": "^3.1.4",
     "eslint": "^5.16.0",
     "eslint-plugin-jest": "^22.6.4",
     "jest": "^24.8.0",
-    "webpack": "^4.35.0",
-    "webpack-cli": "^3.3.5"
+    "rollup": "^1.16.2"
   }
 }

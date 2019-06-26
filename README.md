@@ -10,8 +10,8 @@ We embed scripts from other projects that can also run on their own directly in 
 
 ### Install 
 ```
-  yarn add @titelmedia/scoped-sentry-reporter --dev
-  npm install @titelmedia/scoped-sentry-reporter --save-dev
+  yarn add @titelmedia/scoped-sentry-reporter
+  npm install @titelmedia/scoped-sentry-reporter --save
 ```
 
 ### Usage

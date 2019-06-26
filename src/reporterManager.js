@@ -1,7 +1,6 @@
 import { Integrations as CoreIntegrations } from '@sentry/core';
-import { BrowserClient } from '@sentry/browser';
+import { BrowserClient, Integrations as BrowserIntegrations } from '@sentry/browser';
 import { Hub } from '@sentry/hub';
-import { Breadcrumbs, LinkedErrors, TryCatch, UserAgent } from '@sentry/browser/dist/integrations';
 
 export const URL_MATCHER = /https?:\/\/.*\/\w+\.\w{2,4}/gmi;
 
@@ -9,10 +8,10 @@ export const DEFAULT_SENTRY_OPTIONS = {
   integrations: [
     new CoreIntegrations.InboundFilters(),
     new CoreIntegrations.FunctionToString(),
-    new TryCatch(),
-    new Breadcrumbs(),
-    new LinkedErrors(),
-    new UserAgent(),
+    new BrowserIntegrations.TryCatch(),
+    new BrowserIntegrations.Breadcrumbs(),
+    new BrowserIntegrations.LinkedErrors(),
+    new BrowserIntegrations.UserAgent(),
   ],
 };
 
