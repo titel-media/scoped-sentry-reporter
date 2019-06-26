@@ -1,5 +1,12 @@
+import babel from 'rollup-plugin-babel';
+
 const commonConfig = {
   input: 'src/reporterManager.js',
+  plugins: [
+    babel({
+      exclude: 'node_modules/**'
+    })
+  ],
   output: {
     external: [ '@sentry/core', '@sentry/browser', '@sentry/hub' ]
   }
