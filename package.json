@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "yarn babel ./src/reporterManager.js --out-file ./src/index.es5.js",
+    "build:browser": "webpack --progress",
     "lint": "eslint --config=.eslintrc.js --ext .js ./src",
     "test": " jest --coverage ./src",
     "test:watch": "yarn test --watchAll"
@@ -25,9 +26,12 @@
     "@babel/plugin-proposal-export-default-from": "^7.2.0",
     "@babel/preset-env": "^7.4.5",
     "babel-eslint": "^10.0.1",
+    "babel-loader": "^8.0.6",
     "core-js": "^3.1.4",
     "eslint": "^5.16.0",
     "eslint-plugin-jest": "^22.6.4",
-    "jest": "^24.8.0"
+    "jest": "^24.8.0",
+    "webpack": "^4.35.0",
+    "webpack-cli": "^3.3.5"
   }
 }

@@ -41,8 +41,8 @@ class ReporterManager {
   }
 
   bindGlobalErrorHandlers() {
-    window.addEventListener('error', ({ error }) => this.reportError(error));
-    window.addEventListener('unhandledrejection', ({ error }) => this.reportError(error));
+    window.addEventListener('error', ({ error }) => this.reportError(error || {}));
+    window.addEventListener('unhandledrejection', ({ error }) => this.reportError(error || {}));
   }
 
   addReporter(conditions, client) {
@@ -82,7 +82,7 @@ class ReporterManager {
     return clients && clients.length > 0;
   }
 
-  reportError(error = {}) {
+  reportError(error) {
     if (this.debugMode) {
       // eslint-disable-next-line no-console
       console.info('will report error: ', error);
