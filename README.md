@@ -34,7 +34,7 @@ The function `initSentry` expects an array of regular expressions as the second 
   ReporterManager.initSentry('YOUR_DSN@sentry.io/GOES_HERE', [/.*\/path\/to\/a\/file\.js/]);
 ```
 
-The conditional logic is based on Booleans and will log the error to the respective DSN if one of the urls in the `stackTraces` match one of the conditions.
+The conditional logic is based on the Boolean operator `or` and will log the error to the respective DSN if one of the urls in the `stackTraces` match one of the conditions.
 
 ```javascript
   ReporterManager.initSentry('YOUR_DSN@sentry.io/GOES_HERE', [
