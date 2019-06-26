@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports["default"] = void 0;
+exports["default"] = exports.DEFAULT_OPTIONS = exports.DEFAULT_SENTRY_OPTIONS = exports.URL_MATCHER = void 0;
 
 var _core = require("@sentry/core");
 
@@ -24,12 +24,15 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 var URL_MATCHER = /https?:\/\/.*\/\w+\.\w{2,4}/gmi;
+exports.URL_MATCHER = URL_MATCHER;
 var DEFAULT_SENTRY_OPTIONS = {
   integrations: [new _core.Integrations.InboundFilters(), new _core.Integrations.FunctionToString(), new _integrations.TryCatch(), new _integrations.Breadcrumbs(), new _integrations.LinkedErrors(), new _integrations.UserAgent()]
 };
+exports.DEFAULT_SENTRY_OPTIONS = DEFAULT_SENTRY_OPTIONS;
 var DEFAULT_OPTIONS = {
   debug: false
 };
+exports.DEFAULT_OPTIONS = DEFAULT_OPTIONS;
 
 var ReporterManager =
 /*#__PURE__*/
@@ -39,16 +42,21 @@ function () {
 
     _classCallCheck(this, ReporterManager);
 
-    this.options = _objectSpread({}, DEFAULT_OPTIONS, {
+    this.initOnce({
       debug: debug
     });
-    this.reporter = [];
-    this.defaultReporter = null;
-    this.bindErrorHandler = this.bindErrorHandler.bind(this);
-    this.bindGlobalErrorHandlers();
   }
 
   _createClass(ReporterManager, [{
+    key: "initOnce",
+    value: function initOnce(options) {
+      this.options = _objectSpread({}, DEFAULT_OPTIONS, options);
+      this.reporter = [];
+      this.defaultReporter = null;
+      this.bindErrorHandler = this.bindErrorHandler.bind(this);
+      this.bindGlobalErrorHandlers();
+    }
+  }, {
     key: "bindGlobalErrorHandlers",
     value: function bindGlobalErrorHandlers() {
       window.addEventListener('error', this.bindErrorHandler);
@@ -62,7 +70,7 @@ function () {
         console.info('handling event', event);
       }
 
-      this.reportError(event.error || {});
+      this.reportError(event && event.error || {});
     }
   }, {
     key: "addReporter",
@@ -88,9 +96,9 @@ function () {
     }
   }, {
     key: "removeReporter",
-    value: function removeReporter(hub) {
+    value: function removeReporter(client) {
       this.reporter = this.reporter.filter(function (reporter) {
-        return reporter !== hub;
+        return reporter !== client;
       });
     }
   }, {
@@ -153,7 +161,7 @@ function () {
         });
       }
 
-      if (!reported && this.defaultReporter instanceof _browser.BrowserClient) {
+      if (!reported && this.defaultReporter instanceof _hub.Hub) {
         this.defaultReporter.run(function (client) {
           reported = Boolean(client.captureException(error));
         });
@@ -195,8 +203,7 @@ function () {
     }
   }, {
     key: "debugMode",
-    set: function set() {
-      var on = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : DEFAULT_OPTIONS.debug;
+    set: function set(on) {
       this.options.debug = on;
     },
     get: function get() {

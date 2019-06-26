@@ -3,9 +3,9 @@ import { BrowserClient } from '@sentry/browser';
 import { Hub } from '@sentry/hub';
 import { Breadcrumbs, LinkedErrors, TryCatch, UserAgent } from '@sentry/browser/dist/integrations';
 
-const URL_MATCHER = /https?:\/\/.*\/\w+\.\w{2,4}/gmi;
+export const URL_MATCHER = /https?:\/\/.*\/\w+\.\w{2,4}/gmi;
 
-const DEFAULT_SENTRY_OPTIONS = {
+export const DEFAULT_SENTRY_OPTIONS = {
   integrations: [
     new CoreIntegrations.InboundFilters(),
     new CoreIntegrations.FunctionToString(),
@@ -16,15 +16,19 @@ const DEFAULT_SENTRY_OPTIONS = {
   ],
 };
 
-const DEFAULT_OPTIONS = {
+export const DEFAULT_OPTIONS = {
   debug: false,
 };
 
 class ReporterManager {
   constructor(debug = DEFAULT_OPTIONS.debug) {
+    this.initOnce({ debug });
+  }
+
+  initOnce(options) {
     this.options = {
       ...DEFAULT_OPTIONS,
-      debug,
+      ...options,
     };
     this.reporter = [];
     this.defaultReporter = null;
@@ -34,7 +38,7 @@ class ReporterManager {
     this.bindGlobalErrorHandlers();
   }
 
-  set debugMode(on = DEFAULT_OPTIONS.debug) {
+  set debugMode(on) {
     this.options.debug = on;
   }
 
@@ -52,7 +56,7 @@ class ReporterManager {
       // eslint-disable-next-line no-console
       console.info('handling event', event);
     }
-    this.reportError(event.error || {});
+    this.reportError((event && event.error) || {});
   }
 
   addReporter(conditions, hub) {
@@ -73,8 +77,8 @@ class ReporterManager {
     this.defaultReporter = new Hub(client);
   }
 
-  removeReporter(hub) {
-    this.reporter = this.reporter.filter(reporter => reporter !== hub);
+  removeReporter(client) {
+    this.reporter = this.reporter.filter(reporter => reporter !== client);
   }
 
   getMatchingReporter(url) {
@@ -116,7 +120,7 @@ class ReporterManager {
       });
     }
 
-    if (!reported && this.defaultReporter instanceof BrowserClient) {
+    if (!reported && this.defaultReporter instanceof Hub) {
       this.defaultReporter.run(client => {
         reported = Boolean(client.captureException(error));
       });
