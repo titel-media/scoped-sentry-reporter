@@ -1,5 +1,6 @@
 import { Integrations as CoreIntegrations } from '@sentry/core';
 import { BrowserClient } from '@sentry/browser';
+import { Hub } from '@sentry/hub';
 import { Breadcrumbs, LinkedErrors, TryCatch, UserAgent } from '@sentry/browser/dist/integrations';
 
 const URL_MATCHER = /https?:\/\/.*\/\w+\.\w{2,4}/gmi;
@@ -20,7 +21,7 @@ const DEFAULT_OPTIONS = {
 };
 
 class ReporterManager {
-  constructor(debug = DEFAULT_OPTIONS.debug,) {
+  constructor(debug = DEFAULT_OPTIONS.debug) {
     this.options = {
       ...DEFAULT_OPTIONS,
       debug,
@@ -53,11 +54,13 @@ class ReporterManager {
       throw new Error('You need to provide a DSN');
     }
 
-    this.defaultReporter = new BrowserClient({
+    const client = new BrowserClient({
       ...DEFAULT_SENTRY_OPTIONS,
       ...options,
       dsn,
     });
+
+    this.defaultReporter = new Hub(client);
   }
 
   removeReporter(client) {
@@ -126,7 +129,8 @@ class ReporterManager {
       dsn,
     };
     const client = new BrowserClient(options);
-    this.addReporter(conditions, client);
+    const hub = new Hub(client);
+    this.addReporter(conditions, hub);
   }
 
   getReporters() {

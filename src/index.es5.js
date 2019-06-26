@@ -9,6 +9,8 @@ var _core = require("@sentry/core");
 
 var _browser = require("@sentry/browser");
 
+var _hub = require("@sentry/hub");
+
 var _integrations = require("@sentry/browser/dist/integrations");
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
@@ -41,15 +43,23 @@ function () {
       debug: debug
     });
     this.reporter = [];
-    this.reportError = this.reportError.bind(this);
+    this.defaultReporter = null;
     this.bindGlobalErrorHandlers();
   }
 
   _createClass(ReporterManager, [{
     key: "bindGlobalErrorHandlers",
     value: function bindGlobalErrorHandlers() {
-      window.addEventListener('error', this.reportError);
-      window.addEventListener('unhandledrejection', this.reportError);
+      var _this = this;
+
+      window.addEventListener('error', function (_ref) {
+        var error = _ref.error;
+        return _this.reportError(error);
+      });
+      window.addEventListener('unhandledrejection', function (_ref2) {
+        var error = _ref2.error;
+        return _this.reportError(error);
+      });
     }
   }, {
     key: "addReporter",
@@ -58,6 +68,20 @@ function () {
         client: client,
         conditions: conditions
       });
+    }
+  }, {
+    key: "setDefaultReporter",
+    value: function setDefaultReporter(dsn) {
+      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+      if (!dsn) {
+        throw new Error('You need to provide a DSN');
+      }
+
+      var client = new _browser.BrowserClient(_objectSpread({}, DEFAULT_SENTRY_OPTIONS, options, {
+        dsn: dsn
+      }));
+      this.defaultReporter = new _hub.Hub(client);
     }
   }, {
     key: "removeReporter",
@@ -69,8 +93,8 @@ function () {
   }, {
     key: "getMatchingReporter",
     value: function getMatchingReporter(url) {
-      return this.reporter.filter(function (_ref) {
-        var conditions = _ref.conditions;
+      return this.reporter.filter(function (_ref3) {
+        var conditions = _ref3.conditions;
         return conditions.some(function (condition) {
           return condition.test(url);
         });
@@ -79,12 +103,12 @@ function () {
   }, {
     key: "reportToClients",
     value: function reportToClients(clients, err) {
-      var _this = this;
+      var _this2 = this;
 
-      clients.forEach(function (_ref2) {
-        var client = _ref2.client;
+      clients.forEach(function (_ref4) {
+        var client = _ref4.client;
 
-        if (_this.debugMode) {
+        if (_this2.debugMode) {
           // eslint-disable-next-line no-console
           console.info('reporting to: ', client);
         }
@@ -95,34 +119,21 @@ function () {
     }
   }, {
     key: "reportError",
-    value: function reportError(msg, url, lineNumber, colNumber, originalError) {
-      var _this2 = this;
+    value: function reportError() {
+      var _this3 = this;
+
+      var error = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
       if (this.debugMode) {
         // eslint-disable-next-line no-console
-        console.info('will report error: ', msg, url, lineNumber, colNumber, originalError);
+        console.info('will report error: ', error);
       }
 
       var reported = false;
+      var stack = error.stack;
 
-      if (url) {
-        var matches = this.getMatchingReporter(url);
-
-        if (this.debugMode) {
-          // eslint-disable-next-line no-console
-          console.info('found matches: ', matches);
-        }
-
-        reported = this.reportToClients(matches, originalError);
-
-        if (this.debugMode) {
-          // eslint-disable-next-line no-console
-          console.info('reported: ', reported, matches);
-        }
-      }
-
-      if (!reported && originalError && originalError.stack) {
-        var stacktraceUrls = originalError.stack.match(URL_MATCHER) || [];
+      if (stack) {
+        var stacktraceUrls = error.stack.match(URL_MATCHER) || [];
 
         if (this.debugMode) {
           // eslint-disable-next-line no-console
@@ -131,16 +142,21 @@ function () {
 
         stacktraceUrls.forEach(function (url) {
           if (!reported) {
-            var _matches = _this2.getMatchingReporter(url);
+            var matches = _this3.getMatchingReporter(url);
 
-            reported = _this2.reportToClients(_matches, originalError);
+            reported = _this3.reportToClients(matches, error);
           }
         });
       }
 
+      if (!reported && this.defaultReporter instanceof _browser.BrowserClient) {
+        this.defaultReporter.captureException(error);
+        reported = true;
+      }
+
       if (!reported) {
         // eslint-disable-next-line no-console
-        console.warn('Error without url was thrown, skipping capture on Sentry.');
+        console.warn('Error thrown, skipping capture on Sentry.', error);
       }
 
       return reported;
@@ -164,7 +180,8 @@ function () {
       });
 
       var client = new _browser.BrowserClient(options);
-      this.addReporter(conditions, client);
+      var hub = new _hub.Hub(client);
+      this.addReporter(conditions, hub);
     }
   }, {
     key: "getReporters",
