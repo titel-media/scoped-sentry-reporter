@@ -29,6 +29,8 @@ class ReporterManager {
     this.reporter = [];
     this.defaultReporter = null;
 
+    this.bindErrorHandler = this.bindErrorHandler.bind(this);
+
     this.bindGlobalErrorHandlers();
   }
 
@@ -41,8 +43,16 @@ class ReporterManager {
   }
 
   bindGlobalErrorHandlers() {
-    window.addEventListener('error', ({ error }) => this.reportError(error || {}));
-    window.addEventListener('unhandledrejection', ({ error }) => this.reportError(error || {}));
+    window.addEventListener('error', this.bindErrorHandler);
+    window.addEventListener('unhandledrejection', this.bindErrorHandler);
+  }
+
+  bindErrorHandler(event) {
+    if (this.debugMode) {
+      // eslint-disable-next-line no-console
+      console.info('handling event', event);
+    }
+    this.reportError(event.error || {});
   }
 
   addReporter(conditions, client) {

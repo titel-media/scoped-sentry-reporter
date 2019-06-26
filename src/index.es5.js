@@ -44,22 +44,25 @@ function () {
     });
     this.reporter = [];
     this.defaultReporter = null;
+    this.bindErrorHandler = this.bindErrorHandler.bind(this);
     this.bindGlobalErrorHandlers();
   }
 
   _createClass(ReporterManager, [{
     key: "bindGlobalErrorHandlers",
     value: function bindGlobalErrorHandlers() {
-      var _this = this;
+      window.addEventListener('error', this.bindErrorHandler);
+      window.addEventListener('unhandledrejection', this.bindErrorHandler);
+    }
+  }, {
+    key: "bindErrorHandler",
+    value: function bindErrorHandler(event) {
+      if (this.debugMode) {
+        // eslint-disable-next-line no-console
+        console.info('handling event', event);
+      }
 
-      window.addEventListener('error', function (_ref) {
-        var error = _ref.error;
-        return _this.reportError(error);
-      });
-      window.addEventListener('unhandledrejection', function (_ref2) {
-        var error = _ref2.error;
-        return _this.reportError(error);
-      });
+      this.reportError(event.error || {});
     }
   }, {
     key: "addReporter",
@@ -93,8 +96,8 @@ function () {
   }, {
     key: "getMatchingReporter",
     value: function getMatchingReporter(url) {
-      return this.reporter.filter(function (_ref3) {
-        var conditions = _ref3.conditions;
+      return this.reporter.filter(function (_ref) {
+        var conditions = _ref.conditions;
         return conditions.some(function (condition) {
           return condition.test(url);
         });
@@ -103,12 +106,12 @@ function () {
   }, {
     key: "reportToClients",
     value: function reportToClients(clients, err) {
-      var _this2 = this;
+      var _this = this;
 
-      clients.forEach(function (_ref4) {
-        var client = _ref4.client;
+      clients.forEach(function (_ref2) {
+        var client = _ref2.client;
 
-        if (_this2.debugMode) {
+        if (_this.debugMode) {
           // eslint-disable-next-line no-console
           console.info('reporting to: ', client);
         }
@@ -119,10 +122,8 @@ function () {
     }
   }, {
     key: "reportError",
-    value: function reportError() {
-      var _this3 = this;
-
-      var error = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    value: function reportError(error) {
+      var _this2 = this;
 
       if (this.debugMode) {
         // eslint-disable-next-line no-console
@@ -142,9 +143,9 @@ function () {
 
         stacktraceUrls.forEach(function (url) {
           if (!reported) {
-            var matches = _this3.getMatchingReporter(url);
+            var matches = _this2.getMatchingReporter(url);
 
-            reported = _this3.reportToClients(matches, error);
+            reported = _this2.reportToClients(matches, error);
           }
         });
       }
