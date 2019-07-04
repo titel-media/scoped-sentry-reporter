@@ -15,6 +15,9 @@
     "esm/*",
     "umd/*"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "prepare": "yarn build",
     "build": "rollup --config",
